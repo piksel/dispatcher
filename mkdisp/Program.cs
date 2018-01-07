@@ -193,8 +193,8 @@ namespace mkdisp
                 }
             }
 
-            if (Path.GetExtension(target) != "exe")
-                target += ".exe";
+            if (Path.GetExtension(name) != ".exe")
+                name += ".exe";
 
 
             return true;
