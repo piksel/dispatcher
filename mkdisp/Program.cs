@@ -139,10 +139,22 @@ namespace mkdisp
                     switch (arg[1])
                     {
                         case '-':
-                            switch (arg.Substring(2))
+                            var longArg = arg.Substring(2);
+                            switch (longArg)
                             {
+                                case "win":
+                                case "cmd":
+                                    mode = longArg; break;
                                 case "x32": arch = "32"; break;
                                 case "x64": arch = "64"; break;
+                                case "version":
+                                    printVersion();
+                                    info = true;
+                                    return true;
+                                case "help":
+                                    printUsage();
+                                    info = true;
+                                    return true;
                                 default:
                                     Console.WriteLine($"Error: Unknown argument '{arg}'.");
                                     return false;
