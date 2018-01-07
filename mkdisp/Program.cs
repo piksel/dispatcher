@@ -139,7 +139,7 @@ namespace mkdisp
                             printUsage();
                             info = true;
                             return true;
-                        case 'v':
+                        case 'V':
                             printVersion();
                             info = true;
                             return true;
