@@ -15,10 +15,11 @@ namespace mkdisp
         static string mode = "cmd";
         static string destPath;
         static string srcPath;
-        static string source = "";
         static string target = "";
+        static string name = "";
         static bool info = false;
         static bool force = false;
+        static string[] extraArgs = new string[0];
 
         static int Main(string[] args)
         {
@@ -26,12 +27,18 @@ namespace mkdisp
             destPath = ConfigurationManager.AppSettings["DESTPATH"];
             srcPath = ConfigurationManager.AppSettings["SRCPATH"];
 
+            // Output a single blank line for eligibility
+            Console.WriteLine();
+
             if (!processArgs(args))
             {
+                // Output a single blank line for eligibility
+                Console.WriteLine();
                 printUsage();
                 return 1;
             }
 
+            // Don't do any work if an "info" switch has been supplied
             if(!info)
             {
                 if (string.IsNullOrEmpty(srcPath))
@@ -40,19 +47,19 @@ namespace mkdisp
                     return 1;
                 }
 
-                if (!File.Exists(source))
+                if (!File.Exists(target))
                 {
-                    Console.WriteLine($"Error: Source file '{source}' does not exist.");
+                    Console.WriteLine($"Error: Target file '{target}' does not exist.");
                     return 1;
                 }
 
-                if (!force && File.Exists(target))
+                if (!force && File.Exists(name))
                 {
-                    Console.WriteLine($"Error: Target file '{target}' exists, use -f to overwrite file.");
+                    Console.WriteLine($"Error: File '{name}' exists, use -f to overwrite file.");
                     return 1;
                 }
 
-                var configFile = target + ".config";
+                var configFile = name + ".config";
                 if(!force && File.Exists(configFile))
                 {
                     Console.WriteLine($"Error: Config file '{configFile}' exists, use -f to overwrite file.");
@@ -66,13 +73,22 @@ namespace mkdisp
                     return 1;
                 }
 
+                // Add configuration for extra arguments
+                var sbea = new StringBuilder();
+                for(int i = 0; i < extraArgs.Length; i++)
+                {
+                    sbea.AppendFormat(CONFIG_EXTRA_ARG, i, extraArgs[i]);
+                }
 
-                var config = CONFIG.Replace("{PATH}", source);
+                // Create configuration string
+                var config = CONFIG
+                    .Replace("{PATH}", target)
+                    .Replace("{EXTRA_ARGS}", sbea.ToString());
 
-                Console.Write($"Copying '{srcFile}' to '{target}'... ");
+                Console.Write($"Copying '{srcFile}' to '{name}'... ");
                 try
                 {
-                    File.Copy(srcFile, target);
+                    File.Copy(srcFile, name);
                     Console.WriteLine("OK!");
                 }
                 catch (Exception x)
@@ -154,13 +170,13 @@ namespace mkdisp
 
             if(string.IsNullOrEmpty(destPath) && anonArgs.Count < 2)
             {
-                Console.WriteLine("Error: No TARGET specified and DESTPATH is not configured.");
+                Console.WriteLine("Error: No NAME specified and DESTPATH is not configured.");
                 return false;
             }
 
             if(anonArgs.Count < 1)
             {
-                Console.WriteLine("Error: No SOURCE specified.");
+                Console.WriteLine("Error: No TARGET specified.");
                 return false;
             }
 
@@ -170,25 +186,30 @@ namespace mkdisp
                 return false;
             }
 
-            source = Path.GetFullPath(anonArgs[0]);
-            target = (anonArgs.Count == 2) ? anonArgs[1] : destPath;
+            var targetArgs = anonArgs[0].Split(' ');
 
-            if(Directory.Exists(target))
+            target = targetArgs[0];
+            extraArgs = targetArgs.Skip(1).ToArray();
+
+            target = Path.GetFullPath(target);
+            name = (anonArgs.Count == 2) ? anonArgs[1] : destPath;
+
+            if(Directory.Exists(name))
             {
-                target = Path.Combine(target, Path.GetFileName(source));
+                name = Path.Combine(name, Path.GetFileName(target));
             }
             else
             {
-                if(!target.Contains("\\"))
+                if(!name.Contains("\\"))
                 {
                     if(string.IsNullOrEmpty(destPath))
                     {
-                        Console.WriteLine($"Error: DESTPATH is not set. If you want to use the current directory as target, use .\\{target}");
+                        Console.WriteLine($"Error: DESTPATH is not set. If you want to use the current directory, use .\\{name}");
                         return false;
                     }
                     else
                     {
-                        target = Path.Combine(destPath, target);
+                        name = Path.Combine(destPath, name);
                     }
                 }
             }
